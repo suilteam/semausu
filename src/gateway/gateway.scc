@@ -1,0 +1,80 @@
+#include <suil/zstring.h>
+
+symbol(bin)
+symbol(args)
+
+namespace suil::nozama {
+
+    ///
+    /// Represents a user on the database
+    /// @struct
+    meta User {
+        ///
+        /// Auto generated ID of the user
+        /// @property
+        [[sql::AUTO_INCREMENT, json::optional]]
+        int     Id;
+        ///
+        /// The email address of the user
+        /// @property
+        [[sql::UNIQUE, sql::PRIMARY_KEY]]
+        String Email;
+        ///
+        /// The first name of the user
+        /// @property
+        String FirstName;
+        ///
+        /// The last name of the user
+        /// @property
+        String LastName;
+        ///
+        /// The password of the user
+        /// @property
+        [[json::optional]]
+        String Passwd;
+
+        ///
+        /// A list of roles assigned to a user
+        /// @property
+        [[json::optional, json::json_skip]]
+        std::vector<String> Roles;
+
+        ///
+        /// The salt used when hashing the password
+        /// @property
+        [[json::optional, json::json_skip]]
+        String Salt;
+        ///
+        /// The current state of the user
+        /// @property
+        [[json::optional, json::json_skip]]
+        int    State;
+        ///
+        /// The time at which the user password will expire
+        /// @property
+        [[json::optional, json::json_skip]]
+        int64_t PasswdExpires;
+        ///
+        /// A list of the user's previously used passwords
+        /// @property
+        [[json::optional, json::json_skip]]
+        std::vector<String> PrevPasswds;
+
+        ///
+        /// Path pointing to user's icon
+        /// @property
+        [[json::optional, json::json_skip]]
+        String IconPath;
+        ///
+        /// Notes that can appended to a user account
+        /// @property
+        [[json::optional, json::json_skip]]
+        String Notes;
+    };
+
+    meta InitRequest {
+        [[json::optional]]
+        User    Administrator;
+    };
+
+}
