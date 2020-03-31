@@ -19,8 +19,6 @@ static  void cmdStart(cmdl::Parser& parser) {
 
 int main(int argc, char *argv[])
 {
-    for (int i = 0; i < argc; i++) printf("%s ", argv[i]);
-    printf("\n");
     suil::init(opt(printinfo, false));
     log::setup(opt(verbose, log::DEBUG));
     cmdl::Parser parser(APP_NAME, APP_VERSION, "");

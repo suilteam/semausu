@@ -83,7 +83,7 @@ namespace suil::nozama {
     void Gateway::initLogging()
     {
         idebug("initializing gateway logging");
-        auto logObj = Ego.mConfig["logging.*"];
+        auto logObj = Ego.mConfig["logging"];
         auto verboseObj = logObj("verbose");
         if (verboseObj) {
             // configure logging verbosity
@@ -94,6 +94,7 @@ namespace suil::nozama {
         if (dirObj) {
             // configure File logging
             auto dir = (std::string) dirObj;
+            idebug("Initializing gateway logging to directory %s", dir.c_str());
             mLogger = std::make_unique<FileLogger>(dir, "gateway");
             log::setup(opt(sink, [this](const char *msg, size_t size, log::Level l) {
                 if (mLogger != nullptr) {

@@ -94,6 +94,7 @@ test:system:
     expire_in: 2 days
     paths:
       - runtime/semausu/
+      - /tmp/semausu
 
 # This runs after successfully testing the production. This will build
 # the production docker image and push it to docker hub
@@ -115,7 +116,7 @@ package:prod:
     - cd ./build
     - cp -r ../Dockerfile ./Dockerfile
     - docker build --pull -t suilteam/semausu:unstable .
-    - docker push suilteam/semause:unstable
+    - docker push suilteam/semausu:unstable
 
 # This runs after successfully testing the production on tags. The purpose
 # of this is to build a release docker image off a tag

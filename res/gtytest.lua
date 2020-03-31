@@ -86,7 +86,7 @@ app = {
     mail = {
         -- STMP mail server configuration
         stmp = {
-            host = 'localhost',
+            host = 'stmp4dev',
             port = 3025,
             username = 'devops@suilteam.com',
             passwd = 'passwd'
