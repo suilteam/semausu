@@ -91,7 +91,8 @@ test:system:
     - ./sweep.sh
 
   artifacts:
-    expire_in: 2 days
+    expire_in: 15 days
+    when: always
     paths:
       - runtime/semausu/
       - /tmp/semausu
