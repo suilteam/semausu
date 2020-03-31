@@ -15,6 +15,11 @@
 namespace suil::nozama {
 
     struct Gateway final: LOGGER(NZM_GATEWAY) {
+#ifndef SWEPT
+        using MailOutbox = SslMailOutbox;
+#else
+        using MailOutbox = TcpMailOutbox;
+#endif
         sptr(Gateway);
 
         static Gateway& get();
@@ -27,7 +32,7 @@ namespace suil::nozama {
         String Url;
 
         json::Object& Config() { return mConfig; }
-        SslMailOutbox::WPtr Outbox() { return mOutbox; }
+        MailOutbox::WPtr Outbox() { return mOutbox; }
 
         template <typename C>
         C& Controller() {
@@ -62,6 +67,7 @@ namespace suil::nozama {
         void initPgsql();
         void initJwtAuth();
         void initRedis();
+        void initLogging();
 
         /**
          * first use handler will be invoked when the user installs the application
@@ -74,10 +80,11 @@ namespace suil::nozama {
         using ControllerBox = std::unordered_map<std::type_index, Endpoint::Controller::UPtr>;
         Endpoint& api() { return *ep; }
         Endpoint::unique_ptr ep;
-        SslMailOutbox::Ptr   mOutbox;
+        MailOutbox::Ptr   mOutbox;
         ControllerBox        mControllers;
         json::Object         mConfig;
         bool                 mResetRequested{false};
+        std::unique_ptr<FileLogger> mLogger{nullptr};
     };
 }
 #endif //SUIL_GATEWAY_H

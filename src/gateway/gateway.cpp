@@ -57,10 +57,10 @@ namespace suil::nozama {
         Ego.mResetRequested = reset;
         Ego.mConfig = json::Object::fromLuaFile(configPath);
         Ego.PasswdKey = Ego.mConfig("secrets.passwdkey") || String{};
-
         if (Ego.ep != nullptr) {
             throw Exception::create("Gateway already initialized");
         }
+        initLogging();
         initEndpoint();
         initPgsql();
         initRedis();
@@ -80,6 +80,31 @@ namespace suil::nozama {
         }
     }
 
+    void Gateway::initLogging()
+    {
+        idebug("initializing gateway logging");
+        auto logObj = Ego.mConfig["logging.*"];
+        auto verboseObj = logObj("verbose");
+        if (verboseObj) {
+            // configure logging verbosity
+            auto verbose = (log::Level) (int)verboseObj;
+            log::setup(opt(verbose, verbose));
+        }
+        auto dirObj = logObj("dir");
+        if (dirObj) {
+            // configure File logging
+            auto dir = (std::string) dirObj;
+            mLogger = std::make_unique<FileLogger>(dir, "gateway");
+            log::setup(opt(sink, [this](const char *msg, size_t size, log::Level l) {
+                if (mLogger != nullptr) {
+                    mLogger->log(msg, size, l);
+                }
+                // also log with default handler
+                log::Handler()(msg, size, l);
+            }));
+        }
+    }
+
     void Gateway::initEndpoint()
     {
         idebug("initializing HTTP endpoint");
@@ -96,7 +121,7 @@ namespace suil::nozama {
         idebug("initializing mailer");
         auto mailerObj = Ego.mConfig["mail"];
         auto server = (String) mailerObj("stmp.host", true);
-        mOutbox = SslMailOutbox::mkshared(server,
+        mOutbox = MailOutbox::mkshared(server,
                 (int) mailerObj("stmp.port", true),
                 Email::Address{(String) mailerObj("sender.email", true),
                                mailerObj("sender.name") || String{}});

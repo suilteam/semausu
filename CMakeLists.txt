@@ -17,6 +17,7 @@ set(semausu_DEFINES -DAPI_VERSION=\"${APP_VERSION}\")
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(SUIL_BUILD_DEBUG ON)
+    set(semausu_DEFINES "${semausu_DEFINES};-DSWEPT")
 endif()
 
 if (SUIL_BUILD_DEV_PACKAGE)
@@ -47,13 +48,16 @@ SuilApp(gateway
         SCC_SOURCES  ${GATEWAY_SCCS}
         INSTALL_DIRS res)
 
-SuilApp(gty-test
-        SOURCES      tests/swept.cpp
-        VERSION      ${APP_VERSION}
-        DEFINES      "${semausu_DEFINES};-DSWEPT"
-        INSTALL      ON
-        DEPENDS      gateway-scc
-        INSTALL_DIRS res)
+if (SUIL_BUILD_DEBUG)
+    SuilApp(gtytest
+            SOURCES      tests/swept.cpp
+            VERSION      ${APP_VERSION}
+            DEFINES      ${semausu_DEFINES}
+            INSTALL      ON
+            DEPENDS      gateway-scc)
+endif()
+install(PROGRAMS wait_for
+        DESTINATION bin)
 
 if (SUIL_BUILD_DEV_PACKAGE)
     file(COPY res DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

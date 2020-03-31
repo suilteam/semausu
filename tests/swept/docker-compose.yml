@@ -1,0 +1,62 @@
+version: '3.3'
+
+services:
+    smtp4dev:
+        image: 'rnwood/smtp4dev:v3'
+        container_name: 'smtp4dev'
+        restart: always
+        ports:
+            - '3025:25'
+            - '3080:80'
+        volumes:
+            - ${RUNTIME_DIR}/smtp4dev:/smtp4dev
+        networks:
+            - build-net
+
+    redis:
+        image: 'redis:alpine'
+        container_name: 'redis-db'
+        restart: always
+        ports:
+            - '6379:6379'
+        volumes:
+            - ${RUNTIME_DIR}/redis:/var/lib/redis
+        networks:
+            - build-net
+
+    postgres:
+        image: 'postgres:latest'
+        container_name: 'postgres-db'
+        ports:
+            - "54320:5432"
+        volumes:
+            - ${RUNTIME_DIR}/postgres:/var/lib/postgresql/data
+        environment:
+            - POSTGRES_USER=build
+            - POSTGRES_PASSWORD=passwd
+        networks:
+            - build-net
+
+    semausu:
+        image: 'suilteam/semausu:${SEMAUSU_VERSION}'
+        container_name: 'semausu'
+        ports:
+            - '${DBG_PORT1}:${DBG_PORT1}'
+            - '${DBG_PORT2}:${DBG_PORT2}'
+            - '${DBG_PORT3}:${DBG_PORT3}'
+            - '${DBG_PORT4}:${DBG_PORT4}'
+            - '${DBG_PORT5}:${DBG_PORT5}'
+        networks:
+            - build-net
+        volumes:
+            - ${RUNTIME_DIR}/semausu:/tmp/semausu
+        working_dir: /home/semausu/gateway
+        command: ["wait_for", "postgres-db:5432", "--", "gtytest"]
+        depends_on:
+            - postgres
+            - redis
+            - smtp4dev
+
+networks:
+    build-net:
+        driver: bridge

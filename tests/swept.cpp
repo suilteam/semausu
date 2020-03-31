@@ -116,7 +116,7 @@ int main(int argc, const char *argv[])
 {
     suil::init(opt(printinfo, false));
     try {
-        http::Endpoint<> ep("", opt(port, 10084));
+        http::Endpoint<> ep("", opt(port, 10084), opt(name, "0.0.0.0"));
         Launcher gateway;
 
         eproute(ep, "/restart")
