@@ -28,7 +28,7 @@ services:
         image: 'postgres:latest'
         container_name: 'postgres-db'
         ports:
-            - "54320:5432"
+            - "5432:5432"
         volumes:
             - ${RUNTIME_DIR}/postgres:/var/lib/postgresql/data
         environment:

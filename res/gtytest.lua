@@ -2,7 +2,9 @@
 app = {
     -- configure logging
     logging = {
-        -- verbose = 0,
+        -- enable trace logging
+        verbose = 0,
+        -- enable logging to a file
         dir = '/tmp/semausu/gateway'
     },
 

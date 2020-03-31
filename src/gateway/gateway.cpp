@@ -41,11 +41,13 @@ namespace suil::nozama {
             controller.second->init();
         }
 
+#ifdef SWEPT
         if (!utils::fs::exists(".sweep")) {
             int code{0};
             size_t size{sizeof(code)};
             utils::fs::append(".sweep", &code, size);
         }
+#endif
 
         return ep->start();
     }

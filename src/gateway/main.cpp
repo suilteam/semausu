@@ -20,7 +20,7 @@ static  void cmdStart(cmdl::Parser& parser) {
 int main(int argc, char *argv[])
 {
     suil::init(opt(printinfo, false));
-    log::setup(opt(verbose, log::DEBUG));
+    log::setup(opt(verbose, log::DEBUG), opt(name, APP_NAME));
     cmdl::Parser parser(APP_NAME, APP_VERSION, "");
 
     try
@@ -32,12 +32,14 @@ int main(int argc, char *argv[])
     catch(...)
     {
         fprintf(stderr, "error: %s\n", Exception::fromCurrent().what());
+#ifdef SWEPT
         if (!utils::fs::exists(".sweep")) {
             // write the exit code to file
             int code{EXIT_FAILURE};
             size_t  size{sizeof(code)};
             utils::fs::append(".sweep", &code, size);
         }
+#endif
         return EXIT_FAILURE;
     }
 
