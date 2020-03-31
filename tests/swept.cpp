@@ -184,8 +184,14 @@ static  void cmdStart(cmdl::Parser& parser)
 int main(int argc, char *argv[])
 {
     suil::init(opt(printinfo, false));
-    log::setup(opt(verbose, log::DEBUG));
+    log::setup(opt(verbose, log::TRACE));
     cmdl::Parser parser(APP_NAME, APP_VERSION, "");
+    FileLogger fileLogger("/tmp/semausu/gateway", "gtytest");
+    log::setup(opt(sink, [&fileLogger](const char *msg, size_t size, log::Level l) {
+        fileLogger.log(msg, size, l);
+        // also log with default handler
+        log::Handler()(msg, size, l);
+    }));
 
     try
     {
