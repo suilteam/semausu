@@ -94,8 +94,8 @@ test:system:
     expire_in: 15 days
     when: always
     paths:
-      - runtime/semausu/
-      - /tmp/semausu
+      - tests/swept/runtime
+      - runtime/semausu
 
 # This runs after successfully testing the production. This will build
 # the production docker image and push it to docker hub
