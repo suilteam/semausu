@@ -17,5 +17,5 @@ docker-compose up -d
 echo "Waiting for gtytest endpoint to come up"
 ${WAITFOR} docker:10084 --  echo "gtytest ready to accept tests"
 echo "Sweeping gateway"
-swept --logdir ${RUNTIME_DIR}/swept/logs --resdir ${RUNTIME_DIR}/swept/results \
+swept --logdir runtime/gateway/logs --resdir runtme/gateway/results \
   --gtyconf res/gtytest.lua --gtybin gateway
