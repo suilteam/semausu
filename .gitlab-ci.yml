@@ -1,0 +1,140 @@
+# Build Pipeline for semausu project
+
+image: suilteam/suil-dev:latest
+
+variables:
+  APP_VERSION: $MAJOR_VERSION.$MINOR_VERSION.$PATCH_VERSION
+
+# stub definition
+.job_def:
+  before_script: &docker_hub_login
+    - export DOCKER_HOST=tcp://docker:2375/
+    - docker login -u $SUILTEAM_DOCKERHUB_USER -p $SUILTEAM_DOCKERHUB_PASSWD
+
+# build semausu production built only for release tags
+build:prod:
+  stage: build
+  tags:
+    - docker
+    - linux
+  only:
+    - tags
+    - merge_requests
+    - master
+
+  script:
+    - mkdir -p ./build
+    - cd ./build
+    - cmake ..
+       -DCMAKE_BUILD_TYPE=Release
+       -DCMAKE_INSTALL_PREFIX=`pwd`/artifacts
+       -DAPP_VERSION=$APP_VERSION
+       -DAPI_VERSION=$API_VERSION
+    - make clean install
+
+  artifacts:
+    expire_in: 2 hrs
+    paths:
+      - build/
+
+# This configuration is for building a production image
+# that will be used for system testing
+build:systest:
+  stage: build
+  tags:
+    - docker
+    - linux
+  only:
+    - tags
+    - merge_requests
+    - master
+
+  script:
+    - mkdir -p ./build
+    - cd ./build
+    - cmake ..
+      -DCMAKE_BUILD_TYPE=Debug
+      -DCMAKE_INSTALL_PREFIX=`pwd`/artifacts
+      -DAPP_VERSION=$APP_VERSION
+      -DAPI_VERSION=$API_VERSION
+    - make clean install
+
+  artifacts:
+    expire_in: 2 hrs
+    paths:
+      - build/
+
+# This is useful for system testing. This should build and launch
+# a docker image that will be used for testing
+test:system:
+  stage: test
+  services:
+    - docker:dind
+  tags:
+    - docker
+    - linux
+  only:
+    - tags
+    - merge_requests
+    - master
+  dependencies:
+    - build:systest
+
+  before_script: *docker_hub_login
+  script:
+    - mkdir -p ./build
+    - cd ./build
+    - cp -r ../Dockerfile ./Dockerfile
+    - docker build --pull -t suilteam/semausu:${CI_COMMIT_SHORT_SHA} .
+    - cd ..
+    - apk --no-cache add docker-compose
+    - ./sweep.sh
+
+  artifacts:
+    expire_in: 2 days
+    paths:
+      - runtime/semausu/
+
+# This runs after successfully testing the production. This will build
+# the production docker image and push it to docker hub
+package:prod:
+  stage: deploy
+  services:
+    - docker:dind
+  tags:
+    - docker
+    - linux
+  only:
+    - master
+  dependencies:
+    - build:prod
+
+  before_script: *docker_hub_login
+  script:
+    - mkdir -p ./build
+    - cd ./build
+    - cp -r ../Dockerfile ./Dockerfile
+    - docker build --pull -t suilteam/semausu:unstable .
+    - docker push suilteam/semause:unstable
+
+# This runs after successfully testing the production on tags. The purpose
+# of this is to build a release docker image off a tag
+package:release:
+  stage: deploy
+  services:
+    - docker:dind
+  tags:
+    - docker
+    - linux
+  only:
+    - tags
+  dependencies:
+    - build:prod
+
+  before_script: *docker_hub_login
+  script:
+    - mkdir -p ./build
+    - cd ./build
+    - cp -r ../Dockerfile ./Dockerfile
+    - docker build --pull -t suilteam/semausu:$API_VERSION .
+    - docker push suilteam/semausu:$API_VERSION

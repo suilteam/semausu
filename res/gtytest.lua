@@ -1,5 +1,11 @@
 -- application configuration
 app = {
+    -- configure logging
+    logging = {
+        -- verbose = 0,
+        dir = '/tmp/semausu/gateway'
+    },
+
     --
     -- http endpoint name
     --
@@ -80,16 +86,16 @@ app = {
     mail = {
         -- STMP mail server configuration
         stmp = {
-            host = 'smtp.gmail.com',
-            port = 465,
-            username = 'devops.suilteam@gmail.com',
-            passwd = 'devops312'
+            host = 'localhost',
+            port = 3025,
+            username = 'devops@suilteam.com',
+            passwd = 'passwd'
         },
 
         -- Sender address
         sender = {
             -- email
-            email = 'devops.suilteam@gmail.com',
+            email = 'devops@suilteam.com',
             name  = 'DevOps Suilteam'
         }
     }
