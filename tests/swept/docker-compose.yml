@@ -51,7 +51,7 @@ services:
         volumes:
             - ${RUNTIME_DIR}/semausu:/tmp/semausu
         working_dir: /home/semausu/gateway
-        command: ["wait_for", "postgres-db:5432", "--", "gtytest", "start"]
+        command: ["wait_for", "postgres-db:5432", "--", "gtytest", "start", "--gtyurl", "http://docker:10080"]
         depends_on:
             - postgres
             - redis
