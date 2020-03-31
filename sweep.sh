@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+#set -e
 
 RUNTIME_DIR=`pwd`/runtime
 ROOT_DIR=`pwd`/tests/swept
@@ -19,3 +19,4 @@ ${WAITFOR} docker:10084 --  echo "gtytest ready to accept tests"
 echo "Sweeping gateway"
 swept --logdir runtime/gateway/logs --resdir runtme/gateway/results \
   --gtyconf res/gtytest.lua --gtybin gateway
+docker logs semausu

@@ -193,6 +193,7 @@ int main(int argc, char *argv[])
         log::Handler()(msg, size, l);
     }));
 
+    int code{EXIT_SUCCESS};
     try
     {
         cmdStart(parser);
@@ -202,8 +203,9 @@ int main(int argc, char *argv[])
     catch(...)
     {
         fprintf(stderr, "error: %s\n", Exception::fromCurrent().what());
-        return EXIT_FAILURE;
+        code = EXIT_FAILURE;
     }
 
+    fileLogger.close();
     return EXIT_SUCCESS;
 }
