@@ -11,6 +11,7 @@ local Gateway = setmetatable({
         binary = binary or Swept.Data.GtyBin
         assert(config ~= nil, "Gateway configuration path required")
         assert(binary ~= nil, "Gateway binary binary required")
+        Log:trc("restarting gateway {config: %s, binary: %s rest: %s}", config, binary, tostring(reset))
 
         local args = {"start", "-C", config}
         if reset then args[#args + 1] = "-r"; end
@@ -23,6 +24,8 @@ local Gateway = setmetatable({
             }
         })
         V(resp):IsStatus(Http.Ok, "Server should be launched successfully")
+        Log:trc("Gateway server restarted %s", resp.body);
+
         return setmetatable(resp:json(), {
             __call = function(this, uri, ...)
                 local args = {...}
@@ -41,6 +44,7 @@ local Gateway = setmetatable({
         return resp.status == Http.Ok
     end,
     stop = function(this)
+        Log:trc("stopping gateway servers")
         local resp = Http(this.url..'/stop', {
             method = "POST"
         })

@@ -136,6 +136,5 @@ end)
     -- stop gateway server
     Gateway:stop()
 end)
-:disable('Temporarily disabling test case')
 
 return GatewayInit
