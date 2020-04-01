@@ -2,7 +2,9 @@
 app = {
     -- configure logging
     logging = {
-        -- verbose = 0,
+        -- enable trace logging
+        verbose = 0,
+        -- enable logging to a file
         dir = '/tmp/semausu/gateway'
     },
 
@@ -73,7 +75,7 @@ app = {
             -- pick parameters from environment variable?
             env = "",
             -- specify parameters directly
-            host = "redis-db",
+            host = "10.5.0.6",
             port = 6379
         },
         -- keep connections alive for 30 seconds
@@ -86,8 +88,8 @@ app = {
     mail = {
         -- STMP mail server configuration
         stmp = {
-            host = 'localhost',
-            port = 3025,
+            host = '10.5.0.5',
+            port = 25,
             username = 'devops@suilteam.com',
             passwd = 'passwd'
         },

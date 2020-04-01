@@ -112,67 +112,100 @@ private:
     pid_t  mPid{-1};
 };
 
-int main(int argc, const char *argv[])
+static void startMain(cmdl::Cmd& cmd)
 {
-    suil::init(opt(printinfo, false));
-    try {
-        http::Endpoint<> ep("", opt(port, 10084), opt(name, "0.0.0.0"));
-        Launcher gateway;
+    auto gtyurl = cmd.getvalue<String>("gtyurl", "http://localhost:10080");
+    sdebug("Gateway URL is %s", gtyurl());
 
-        eproute(ep, "/restart")
-        ("GET"_method)
-        ([&gateway](const http::Request& req, http::Response& resp) {
-            try {
-                auto args = req.toJson<Restart>();
+    http::Endpoint<> ep("", opt(port, 10084), opt(name, "0.0.0.0"));
+    Launcher gateway;
 
-                gateway.stop();
-                auto timeout = utils::after(5000);
-                while (gateway and (mnow() < timeout)) {
-                    msleep(utils::after(1000));
-                }
-                if (gateway) {
-                    // failed to stop gateway
-                    resp << "Failed to stop currently running instance of gateway";
-                    resp.end(http::INTERNAL_ERROR);
-                    return;
-                }
-                if (gateway.restart(args)) {
-                    resp << R"({"server": "http://localhost:10080"})";
-                    resp.end(http::OK);
-                }
-                else {
-                    resp << "Restarting the server failed";
-                    resp.end(http::INTERNAL_ERROR);
-                }
+    eproute(ep, "/restart")
+    ("GET"_method)
+    ([&gateway, &gtyurl](const http::Request& req, http::Response& resp) {
+        try {
+            auto args = req.toJson<Restart>();
+
+            gateway.stop();
+            auto timeout = utils::after(5000);
+            while (gateway and (mnow() < timeout)) {
+                msleep(utils::after(1000));
             }
-            catch (...) {
-                auto ex = Exception::fromCurrent();
-                serror("/restart: %s", ex.what());
-                resp << ex.what();
+            if (gateway) {
+                // failed to stop gateway
+                resp << "Failed to stop currently running instance of gateway";
+                resp.end(http::INTERNAL_ERROR);
+                return;
+            }
+            if (gateway.restart(args)) {
+                resp << R"({"server": ")" << gtyurl << "\"}";
+                resp.end(http::OK);
+            }
+            else {
+                resp << "Restarting the server failed";
                 resp.end(http::INTERNAL_ERROR);
             }
-        });
+        }
+        catch (...) {
+            auto ex = Exception::fromCurrent();
+            serror("/restart: %s", ex.what());
+            resp << ex.what();
+            resp.end(http::INTERNAL_ERROR);
+        }
+    });
 
-        eproute(ep, "/stop")
-        ("POST"_method)
-        ([&gateway] {
-            // stop the gateway
-            gateway.stop();
-            return http::Status::OK;
-        });
+    eproute(ep, "/stop")
+    ("POST"_method)
+    ([&gateway] {
+        // stop the gateway
+        gateway.stop();
+        return http::Status::OK;
+    });
 
-        eproute(ep, "/running")
-        ("GET"_method)
-        ([&gateway] {
-            // stop the gateway
-            return gateway? http::OK : http::Status::RESET_CONTENT;
-        });
+    eproute(ep, "/running")
+    ("GET"_method)
+    ([&gateway] {
+        // stop the gateway
+        return gateway? http::OK : http::Status::RESET_CONTENT;
+    });
 
-        ep.start();
+    ep.start();
+}
+
+static  void cmdStart(cmdl::Parser& parser)
+{
+    cmdl::Cmd start("start", "starts gtytest server");
+    start << cmdl::Arg{"gtyurl", "Base gateway URL with port (default: http://locahost:10080)",
+                       'C', false};
+    start(startMain);
+    parser.add(std::move(start));
+}
+
+int main(int argc, char *argv[])
+{
+    suil::init(opt(printinfo, false));
+    log::setup(opt(verbose, log::TRACE), opt(name, APP_NAME));
+    cmdl::Parser parser(APP_NAME, APP_VERSION, "");
+    FileLogger fileLogger("/tmp/semausu/gateway", "gtytest");
+    log::setup(opt(sink, [&fileLogger](const char *msg, size_t size, log::Level l) {
+        fileLogger.log(msg, size, l);
+        // also log with default handler
+        log::Handler()(msg, size, l);
+    }));
+
+    int code{EXIT_SUCCESS};
+    try
+    {
+        cmdStart(parser);
+        parser.parse(argc, argv);
+        parser.handle();
     }
-    catch (...) {
-        fprintf(stderr, "error: %s", suil::Exception::fromCurrent().what());
-        return EXIT_FAILURE;
+    catch(...)
+    {
+        fprintf(stderr, "error: %s\n", Exception::fromCurrent().what());
+        code = EXIT_FAILURE;
     }
+
+    fileLogger.close();
     return EXIT_SUCCESS;
 }

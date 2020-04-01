@@ -11,7 +11,8 @@ services:
         volumes:
             - ${RUNTIME_DIR}/smtp4dev:/smtp4dev
         networks:
-            - build-net
+            build-net2:
+                ipv4_address: 10.5.0.5
 
     redis:
         image: 'redis:alpine'
@@ -22,20 +23,22 @@ services:
         volumes:
             - ${RUNTIME_DIR}/redis:/var/lib/redis
         networks:
-            - build-net
+            build-net2:
+                ipv4_address: 10.5.0.6
 
     postgres:
         image: 'postgres:latest'
         container_name: 'postgres-db'
         ports:
-            - "54320:5432"
+            - "5432:5432"
         volumes:
             - ${RUNTIME_DIR}/postgres:/var/lib/postgresql/data
         environment:
             - POSTGRES_USER=build
             - POSTGRES_PASSWORD=passwd
         networks:
-            - build-net
+            build-net2:
+                ipv4_address: 10.5.0.7
 
     semausu:
         image: 'suilteam/semausu:${SEMAUSU_VERSION}'
@@ -47,16 +50,20 @@ services:
             - '${DBG_PORT4}:${DBG_PORT4}'
             - '${DBG_PORT5}:${DBG_PORT5}'
         networks:
-            - build-net
+            build-net2:
+                ipv4_address: 10.5.0.8
         volumes:
             - ${RUNTIME_DIR}/semausu:/tmp/semausu
         working_dir: /home/semausu/gateway
-        command: ["wait_for", "postgres-db:5432", "--", "gtytest"]
+        command: ["wait_for", "postgres-db:5432", "--", "gtytest", "start", "--gtyurl", "http://docker:10080"]
         depends_on:
             - postgres
             - redis
             - smtp4dev
 
 networks:
-    build-net:
+    build-net2:
         driver: bridge
+        ipam:
+            config:
+                - subnet: 10.5.0.0/16
