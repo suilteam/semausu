@@ -80,16 +80,16 @@ GatewayInit("InitializingWithValidArguments", "Test initializing an application 
     local resp = Http(ctx.gty('/app-init'), {
         method = 'POST',
         body = {
-            Administrator = TestUsers.Administrator
+            Administrator = Gateway.Data.Admin
         }
     })
     V(resp):IsStatus(Http.Ok, "Initializing gateway with valid parameters should succeed")
 
     -- try initializing again with valid parameters, route should not be accessible
-    resp  = Http(ctx.gty("//app-init"), {
+    resp  = Http(ctx.gty("/app-init"), {
         method = 'POST',
         body = {
-            Administrator = TestUsers.Administrator
+            Administrator = Gateway.Data.Admin
         }
     })
     V(resp):IsStatus(Http.NotFound, "Initializing an already initialized gateway should fail as the route get disabled");
@@ -105,7 +105,7 @@ GatewayInit("AccessingRoutesAfterInitialization", "Verifies that routes are acce
     local resp = Http(ctx.gty('/app-init'), {
         method = 'POST',
         body = {
-            Administrator = TestUsers.Administrator
+            Administrator = Gateway.Data.Admin
         }
     })
     V(resp):IsStatus(Http.Ok, "Initializing gateway with valid parameters should succeed")
@@ -113,7 +113,7 @@ GatewayInit("AccessingRoutesAfterInitialization", "Verifies that routes are acce
     -- the route /users/register route should now be available (will fail with BAD_REQUEST)
     local resp = Http(ctx.gty('/users/register'), {
         method = 'POST',
-        form   = TestUsers.Administrator
+        form   = Gateway.Data.Admin
     })
     V(resp):IsStatus(Http.BadRequest, "System routes should be reachable after gateway is initialized")
     local json = resp:json()
@@ -123,14 +123,16 @@ GatewayInit("AccessingRoutesAfterInitialization", "Verifies that routes are acce
     local resp = Http(ctx.gty('/users/login'), {
         method = 'POST',
         form   = {
-            Email  = TestUsers.Administrator.Email,
-            Passwd = TestUsers.Administrator.Passwd
+            Email  = Gateway.Data.Admin.Email,
+            Passwd = Gateway.Data.Admin.Passwd
         }
     })
     V(resp):IsStatus(Http.Ok, "Administrator should be able to log into gateway")
            :HasHeader('Authorization', "A token should have been issued to admin user")
-    local jwt = Jwt:decode(resp.headers.Authorization)
+
+    local jwt = Jwt(resp.headers.Authorization)
     Test(jwt ~= nil, "Returned token should be a valid JWT")
+    Test(jwt:AnyRole('SystemAdmin'), "Administrator should have a 'SystemAdmin' role")
 end)
 :after(function(ctx)
     -- stop gateway server

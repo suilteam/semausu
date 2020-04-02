@@ -61,4 +61,44 @@ local Gateway = setmetatable({
     end
 })
 
+local User = setmetatable({}, {
+    __call = function(this, email, fn, ln, passwd, attrs)
+        local user = attrs or {}
+        user.Email = email
+        user.FirstName = fn
+        user.LastName = ln
+        user.Passwd = passwd
+        return user
+    end
+})
+
+---
+--- Represents data that can used in test cases
+---
+Gateway.Data = {
+    Admin = User('admin@suilteam.com','Admin','Gateway', 'admin123'),
+    ---
+    --- @field ValidUsers table Is list of valid users that can be used for testing
+    ---
+    Users1 = {
+        User('user1@suilteam.com', 'User1', 'Testing', 'user1Pass'),
+        User('user2@suilteam.com', 'User2', 'Testing', 'user2Pass'),
+        User('user3@suilteam.com', 'User3', 'Testing', 'user3Pass')
+    },
+    Users2 = {
+        User('user4@suilteam.com', 'User4', 'Testing', 'user4Pass'),
+        User('user5@suilteam.com', 'User5', 'Testing', 'user5Pass')
+    }
+}
+
+Gateway.init = function(this, ctx)
+    Test(this:running(), 'Gateway server must be running before initialization')
+    local resp = Http(ctx.gty('/app-init'), {
+        method = 'POST',
+        body = { Administrator = this.Data.Admin }
+    })
+    return resp.status == Http.Ok
+end
+
+
 return Gateway
