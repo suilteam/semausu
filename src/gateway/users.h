@@ -48,6 +48,20 @@ namespace suil::nozama {
         [[method("DELETE")]]
         [[desc("Log a user out of semausu")]]
         void logoutUser(const http::Request& req, http::Response& resp);
+
+        [[method("UPDATE")]]
+        [[desc("Blocks a user using using the system")]]
+        void blockUser(const http::Request& req, http::Response& resp);
+
+        [[method("UPDATE")]]
+        [[desc("Changes a user password")]]
+        void changePasswd(const http::Request& req, http::Response& resp);
+#ifdef SWEPT
+        /*
+         * The following list of routes are available on swept builds only
+         * because they AID in debug
+         */
+#endif
     };
 }
 #endif //SUIL_USERS_H

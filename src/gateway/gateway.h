@@ -63,6 +63,7 @@ namespace suil::nozama {
         }
 
         void initEndpoint();
+        void initAdminEndpoint();
         void initOutbox();
         void initPgsql();
         void initJwtAuth();

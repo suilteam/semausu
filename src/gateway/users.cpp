@@ -26,12 +26,21 @@ namespace suil::nozama {
         (std::bind(&Users::loginUser, this, std::placeholders::_1, std::placeholders::_2));
 
         eproute(api, "/users/verify")
-        ("GET"_method)
+        ("POST"_method)
         (std::bind(&Users::verifyUser, this, std::placeholders::_1, std::placeholders::_2));
 
         eproute(api, "/users/logout")
         ("DELETE"_method)
         (std::bind(&Users::logoutUser, this, std::placeholders::_1, std::placeholders::_2));
+
+        eproute(api, "/users/block")
+        ("UPDATE"_method)
+        .attrs((opt(AUTHORIZE, Auth{http::mw::EndpointAdmin::Role})))
+        (std::bind(&Users::blockUser, this, std::placeholders::_1, std::placeholders::_2));
+
+        eproute(api, "/users/changepasswd")
+        ("UPDATE"_method)
+        (std::bind(&Users::changePasswd, this, std::placeholders::_1, std::placeholders::_2));
     }
 
     void Users::registerUser_(const http::Request &req, http::Response &resp)
@@ -126,9 +135,13 @@ namespace suil::nozama {
                 resp.end(http::Status::INTERNAL_ERROR);
                 return;
             }
-
+#ifndef SWEPT
             resp << "Welcome " << user.FirstName << " " << user.LastName << ", your account was successfully registered."
                  << " A confirmation email has been sent to " << user.Email;
+#else
+            // When build for swept, we need to return the verification token
+            resp << user.Notes;
+#endif
             resp.setContentType("text/plain");
             resp.end(http::Status::CREATED);
         }
@@ -264,7 +277,7 @@ namespace suil::nozama {
             resp.end();
         } catch(...) {
             /* unhandled error */
-            ierror("/verify %s", Exception::fromCurrent().what());
+            ierror("/users/verify %s", Exception::fromCurrent().what());
             Base::fail(resp, "InternalError",
                              "Processing account verification request failed, contact system administrator");
             resp.end(http::Status::INTERNAL_ERROR);
@@ -292,9 +305,72 @@ namespace suil::nozama {
             resp.end();
         } catch(...) {
             /* unhandled error */
-            ierror("/verify %s", Exception::fromCurrent().what());
+            ierror("/users/logout %s", Exception::fromCurrent().what());
             Base::fail(resp, "InternalError", "Processing logout request failed, contact system administrator");
             resp.end(http::Status::INTERNAL_ERROR);
+        }
+    }
+
+    void Users::blockUser(const http::Request &req, http::Response &resp)
+    {
+        try {
+            auto email = req.query<String>("email");
+            auto reason = req.query<String>("reason");
+
+            if (!http::validators::Email()(email)) {
+                /* invalid user email address */
+                Base::fail(resp, "InvalidParameters", "Provided account email format is invalid");
+                resp.end(http::Status::BAD_REQUEST);
+                return;
+            }
+
+            // Revoke all tokens associated with the account to block
+            auto& acl = api.template context<http::mw::JwtSession>(req);
+            acl.revoke(email);
+
+            // set account status to blocked
+            scoped(conn, api.template middleware<sql::mw::Postgres>().conn());
+            int found{0};
+            conn("SELECT COUNT(*) FROM users WHERE email = $1")(email) >> found;
+            if (!found) {
+                /* does not exist */
+                Base::fail(resp, "InvalidRequest", "Account being verified does not exist");
+                resp.end(http::Status::BAD_REQUEST);
+                return;
+            }
+
+            /* update account, set it's status to blocked */
+            bool status = conn("UPDATE users SET State = $1, Notes = $2 WHERE email = $3")
+                              ((int)State::Blocked, reason, email).status();
+            if (!status) {
+                /* updating server failed */
+                Base::fail(resp, "InternalError",
+                           "Processing account block status failed");
+                resp.end(http::Status::INTERNAL_ERROR);
+                return;
+            }
+        }
+        catch (...) {
+            /* unhandled error */
+            ierror("/users/block %s", Exception::fromCurrent().what());
+            Base::fail(resp, "InternalError", "Processing logout request failed, contact system administrator");
+            resp.end(http::Status::INTERNAL_ERROR);
+        }
+    }
+
+    void Users::changePasswd(const http::Request &req, http::Response &resp)
+    {
+        typedef decltype(iod::D(
+            prop(Email,     String),
+            prop(OldPasswd, String),
+            prop(Passwd,    String)
+         )) ChangePasswd;
+
+        http::RequestForm requestForm(req, {"Email", "OldPasswd", "Passwd"}, "\n");
+
+        try {
+        }
+        catch(...) {
         }
     }
 }

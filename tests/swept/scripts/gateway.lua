@@ -90,15 +90,54 @@ Gateway.Data = {
         User('user5@suilteam.com', 'User5', 'Testing', 'user5Pass')
     }
 }
+Gateway._endpointApi = function(this, name, handler)
+    assert(name and type(name) == 'string', 'The name of the API must be a string')
+    assert(handler and type(handler) == 'function', 'handler must be an executable function')
+    this[name] = handler
+    this[name..'0'] = function(self, ctx, ...)
+        Test(self:running(), "%s: Gateway server must be running before invoking target API", name)
+        return self[name](self, ctx, ...)
+    end
+end
 
-Gateway.init = function(this, ctx)
-    Test(this:running(), 'Gateway server must be running before initialization')
+Gateway:_endpointApi('init', function(this, ctx)
     local resp = Http(ctx.gty('/app-init'), {
         method = 'POST',
         body = { Administrator = this.Data.Admin }
     })
     return resp.status == Http.Ok
-end
+end)
 
+Gateway:_endpointApi('register', function(this, ctx, user)
+    local resp = Http(ctx.gty('/users/register'), {
+        method = 'POST',
+        form   = user
+    })
+    if resp.status ~= Http.Created then
+        local json = resp:json()
+        return false, {"Registering user %s failed: %s", user.Email, json.status}
+    end
+    -- verify user
+    resp = Http(ctx.gty('/users/verify'), {
+        method = 'POST',
+        params = {email = user.Email, id = resp.body}
+    })
+    if resp.status ~= Http.Ok then
+        local json = resp:json()
+        return false, {"Registering user %s failed: %s", user.Email, json.status}
+    end
+    return true, {'User sucessfully logged in'}
+end)
+
+Gateway:_endpointApi('login', function(this, ctx, user)
+    local resp = Http(ctx.gty('/users/login'), {
+        method = 'POST',
+        form = {Email = user.Email, Passwd = user.Passwd}
+    })
+    if resp.status == Http.Ok then return resp.headers.Authorization, {'User successfully logged in'} end
+    -- failed to login user
+    local json = resp:json()
+    return false, {"Logging in user '%s' failed: %s", user.Email, json.status}
+end)
 
 return Gateway
