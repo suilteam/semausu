@@ -2,6 +2,7 @@
 
 symbol(bin)
 symbol(args)
+symbol(OldPasswd)
 
 namespace suil::nozama {
 
