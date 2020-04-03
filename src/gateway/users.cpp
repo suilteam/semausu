@@ -34,12 +34,12 @@ namespace suil::nozama {
         (std::bind(&Users::logoutUser, this, std::placeholders::_1, std::placeholders::_2));
 
         eproute(api, "/users/block")
-        ("UPDATE"_method)
+        ("POST"_method)
         .attrs((opt(AUTHORIZE, Auth{http::mw::EndpointAdmin::Role})))
         (std::bind(&Users::blockUser, this, std::placeholders::_1, std::placeholders::_2));
 
         eproute(api, "/users/changepasswd")
-        ("UPDATE"_method)
+        ("POST"_method)
         (std::bind(&Users::changePasswd, this, std::placeholders::_1, std::placeholders::_2));
     }
 

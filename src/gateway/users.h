@@ -49,11 +49,11 @@ namespace suil::nozama {
         [[desc("Log a user out of semausu")]]
         void logoutUser(const http::Request& req, http::Response& resp);
 
-        [[method("UPDATE")]]
+        [[method("POST")]]
         [[desc("Blocks a user using using the system")]]
         void blockUser(const http::Request& req, http::Response& resp);
 
-        [[method("UPDATE")]]
+        [[method("POST")]]
         [[desc("Changes a user password")]]
         void changePasswd(const http::Request& req, http::Response& resp);
 #ifdef SWEPT
