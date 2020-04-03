@@ -68,6 +68,7 @@ namespace suil::nozama {
         initRedis();
         initJwtAuth();
         initOutbox();
+        initAdminEndpoint();
 
         scoped(conn, ep->middleware<sql::mw::Postgres>().conn());
         Settings settings(conn);
@@ -117,6 +118,13 @@ namespace suil::nozama {
                           opt(port, (httpObj("server.port") or 1080)),
                           opt(accept_backlog, (httpObj("server.backlog") or 5000)));
         Ego.Url = (httpObj("url") or String{"localhost"}).dup();
+    }
+
+    void Gateway::initAdminEndpoint()
+    {
+        idebug("initializing AdminEndpoint middleware");
+        auto admin = ep->middleware<http::mw::EndpointAdmin>();
+        admin.setup(*ep);
     }
 
     void Gateway::initOutbox()
