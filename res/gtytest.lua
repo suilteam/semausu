@@ -9,7 +9,7 @@ app = {
     },
 
     --
-    -- http endpoint name
+    -- http endpoint configuration
     --
     http = {
         url = 'gty.semausu.com',
@@ -20,11 +20,13 @@ app = {
     },
 
     --
-    -- access control list
+    -- Accounts settings
     --
-    secrets = {
+    accounts = {
         -- key used to generate user salt
-        passwdkey = "8xF1nfomq1u5LzVB"
+        passwdkey = "8xF1nfomq1u5LzVB",
+        -- The maximum number of passwords
+        passwdHistoryLimit = 5
     },
 
     --

@@ -3,6 +3,7 @@
 //
 
 #include <suil/sql/pgsql.h>
+#include <suil/mustache.h>
 #include "users.h"
 #include "gateway.h"
 
@@ -58,7 +59,7 @@ namespace suil::nozama {
         sdebug("intializing gateway {config: %s, reset = %d}", configPath(), reset);
         Ego.mResetRequested = reset;
         Ego.mConfig = json::Object::fromLuaFile(configPath);
-        Ego.PasswdKey = Ego.mConfig("secrets.passwdkey") || String{};
+
         if (Ego.ep != nullptr) {
             throw Exception::create("Gateway already initialized");
         }
@@ -80,6 +81,7 @@ namespace suil::nozama {
         }
         else {
             Ego.AdminEmail = ((String) settings["admin_email"]).dup();
+            // Ego.Frontend = ((String) settings["frontend"]).dup();
         }
     }
 
@@ -245,6 +247,25 @@ namespace suil::nozama {
                 opt(path,    jwtObj["path"]    || String{}));
 
         itrace("JWT authorization middleware initialized");
+    }
+
+    bool Gateway::sendTemplatedEmail(
+            const String &dst,
+            const String &subject,
+            const String &mustachePath,
+            const json::Object &params)
+    {
+        if (auto outbox = Outbox().lock()) {
+            auto msg = outbox->draft(dst, subject);
+            auto &tmpl = MustacheCache::get().load(mustachePath);
+            tmpl.render(msg->body(), params);
+            msg->content("text/html");
+            outbox->send(std::move(msg));
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     bool Gateway::firstUse(const suil::http::Request &req, suil::http::Response &resp)

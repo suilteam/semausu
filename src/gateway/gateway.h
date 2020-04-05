@@ -27,12 +27,17 @@ namespace suil::nozama {
         static void start(cmdl::Cmd& cmd);
 
     public:
-        String AdminEmail;
-        String PasswdKey;
-        String Url;
+        String AdminEmail{};
+        String Url{};
+        String Frontend{};
 
         json::Object& Config() { return mConfig; }
         MailOutbox::WPtr Outbox() { return mOutbox; }
+        bool sendTemplatedEmail(
+                const String& dst,
+                const String& subject,
+                const String& mustache,
+                const json::Object& params);
 
         template <typename C>
         C& Controller() {

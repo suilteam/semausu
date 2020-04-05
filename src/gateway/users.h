@@ -62,6 +62,11 @@ namespace suil::nozama {
          * because they AID in debug
          */
 #endif
+
+    private:
+        std::int64_t  mPasswdExpires{0};
+        std::uint32_t mPasswdHistoryCount{0};
+        String        mPasswdKey{};
     };
 }
 #endif //SUIL_USERS_H
