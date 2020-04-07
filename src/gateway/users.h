@@ -7,7 +7,7 @@
 
 #include "common.h"
 
-namespace suil::nozama {
+namespace suil::semauusu {
 
     struct Users final : Endpoint::Controller, LOGGER(NZM_GATEWAY) {
         using Base = typename Endpoint::Controller;
@@ -54,8 +54,33 @@ namespace suil::nozama {
         void blockUser(const http::Request& req, http::Response& resp);
 
         [[method("POST")]]
+        [[desc("Unblocks a blocked user")]]
+        void unblockUser(const http::Request& req, http::Response& resp);
+
+        [[method("POST")]]
         [[desc("Changes a user password")]]
         void changePasswd(const http::Request& req, http::Response& resp);
+
+        [[method("GET")]]
+        [[desc("Unblocks a blocked user")]]
+        void resendVerification(const http::Request& req, http::Response& resp);
+
+        [[method("GET")]]
+        [[desc("Retrieves a list of all registered users")]]
+        void listUsers(const http::Request& req, http::Response& resp);
+
+        [[method("GET")]]
+        [[desc("Retrieves a single user by email from the server")]]
+        void getUser(const http::Request& req, http::Response& resp);
+
+        [[method("POST")]]
+        [[desc("Adds roles to an existing user account")]]
+        void addRoles(const http::Request& req, http::Response& resp);
+
+        [[method("POST")]]
+        [[desc("Removes roles to an existing user account")]]
+        void revokeRoles(const http::Request& req, http::Response& resp);
+
 #ifdef SWEPT
         /*
          * The following list of routes are available on swept builds only

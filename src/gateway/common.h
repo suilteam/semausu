@@ -13,7 +13,7 @@
 
 #include "gateway.scc.h"
 
-namespace suil::nozama {
+namespace suil::semauusu {
 
     using Endpoint = http::TcpEndpoint<
             http::mw::Initializer,     /// needed for initializing the application

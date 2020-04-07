@@ -12,7 +12,7 @@
 
 #include "common.h"
 
-namespace suil::nozama {
+namespace suil::semauusu {
 
     struct Gateway final: LOGGER(NZM_GATEWAY) {
 #ifndef SWEPT

@@ -4,7 +4,7 @@ symbol(bin)
 symbol(args)
 symbol(OldPasswd)
 
-namespace suil::nozama {
+namespace suil::semauusu {
 
     ///
     /// Represents a user on the database
@@ -76,6 +76,8 @@ namespace suil::nozama {
     meta InitRequest {
         [[json::optional]]
         User    Administrator;
+        [[json::optional]]
+        String  Frontend;
     };
 
 }

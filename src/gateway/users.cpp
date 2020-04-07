@@ -7,12 +7,12 @@
 #include "users.h"
 #include "gateway.h"
 
-namespace suil::nozama {
+namespace suil::semauusu {
 
     constexpr std::int64_t DEFAULT_PASSWORD_EXPIRY{7776000};
     constexpr std::uint32_t DEFAULT_PASSWORD_HISTORY_COUNT{6};
 
-    Users::Users(suil::nozama::Endpoint &ep)
+    Users::Users(suil::semauusu::Endpoint &ep)
         : Base(ep)
     {}
 
@@ -40,6 +40,16 @@ namespace suil::nozama {
         ("POST"_method)
         .attrs((opt(AUTHORIZE, Auth{http::mw::EndpointAdmin::Role})))
         (std::bind(&Users::blockUser, this, std::placeholders::_1, std::placeholders::_2));
+
+        eproute(api, "/users/unblock")
+        ("POST"_method)
+        .attrs((opt(AUTHORIZE, Auth{http::mw::EndpointAdmin::Role})))
+        (std::bind(&Users::unblockUser, this, std::placeholders::_1, std::placeholders::_2));
+
+
+        eproute(api, "/users/resendverify")
+        ("GET"_method)
+        (std::bind(&Users::resendVerification, this, std::placeholders::_1, std::placeholders::_2));
 
         eproute(api, "/users/changepasswd")
         ("POST"_method)
@@ -344,12 +354,19 @@ namespace suil::nozama {
 
             // set account status to blocked
             scoped(conn, api.template middleware<sql::mw::Postgres>().conn());
-            int found{0};
-            conn("SELECT COUNT(*) FROM users WHERE email = $1")(email) >> found;
-            if (!found) {
+            User user;
+            if (!(conn("SELECT * FROM users WHERE email = $1")(email) >> user)) {
                 // account does not exist
-                Base::fail(resp, "InvalidRequest", "Account being verified does not exist");
+                Base::fail(resp, "InvalidRequest", "Account to block does not exist");
                 resp.end(http::Status::BAD_REQUEST);
+                return;
+            }
+
+            if (user.State != State::Active) {
+                // account must be active in order to be blocked
+                Base::fail(resp, "AccountNotActive", "Account '%s' is not active, can only block active accounts",
+                           email);
+                resp.end(http::BAD_REQUEST);
                 return;
             }
 
@@ -363,11 +380,114 @@ namespace suil::nozama {
                 resp.end(http::Status::INTERNAL_ERROR);
                 return;
             }
+            resp << "Account '" << email << "' blocked";
+            resp.setContentType("text/plain");
+            resp.end();
         }
         catch (...) {
             /* unhandled error */
             ierror("/users/block %s", Exception::fromCurrent().what());
             Base::fail(resp, "InternalError", "Processing logout request failed, contact system administrator");
+            resp.end(http::Status::INTERNAL_ERROR);
+        }
+    }
+
+    void Users::unblockUser(const http::Request &req, http::Response &resp)
+    {
+        try {
+            auto email = req.query<String>("email");
+
+            // set account status to blocked
+            scoped(conn, api.template middleware<sql::mw::Postgres>().conn());
+            User user;
+            if (!(conn("SELECT * FROM users WHERE email = $1")(email) >> user)) {
+                // account does not exist
+                Base::fail(resp, "InvalidRequest", "Account being to unblock does not exist");
+                resp.end(http::Status::BAD_REQUEST);
+                return;
+            }
+
+            if (user.State != State::Blocked) {
+                // Can only unblock Blocked accounts
+                Base::fail(resp, "AccountNotBlocked", "Account '%s' is not blocked, can only unblock blocked accounts",
+                                 email);
+                resp.end(http::BAD_REQUEST);
+                return;
+            }
+
+            // update account, set it's status to blocked
+            bool status = conn("UPDATE users SET State = $1 WHERE email = $3")
+                    ((int)State::Active, email).status();
+            if (!status) {
+                // updating server failed
+                Base::fail(resp, "InternalError",
+                           "Processing account unblock failed");
+                resp.end(http::Status::INTERNAL_ERROR);
+                return;
+            }
+
+            resp << "Account '" << email << "' unblocked";
+            resp.setContentType("text/plain");
+            resp.end();
+        }
+        catch (...) {
+            /* unhandled error */
+            ierror("/users/unblock %s", Exception::fromCurrent().what());
+            Base::fail(resp, "InternalError", "Processing unblock request failed, contact system administrator");
+            resp.end(http::Status::INTERNAL_ERROR);
+        }
+    }
+
+    void Users::resendVerification(const http::Request &req, http::Response &resp)
+    {
+        try {
+            auto email = req.query<String>("email");
+
+            // set account status to blocked
+            scoped(conn, api.template middleware<sql::mw::Postgres>().conn());
+            User user;
+            if (!(conn("SELECT * FROM users WHERE email = $1")(email) >> user)) {
+                // account does not exist
+                Base::fail(resp, "InvalidRequest", "Account being verified does not exist");
+                resp.end(http::Status::BAD_REQUEST);
+                return;
+            }
+
+            if (user.State != State::Verify) {
+                // Can only unblock Blocked accounts
+                Base::fail(resp, "AccountNotVerifiable", "Account '%s' is not in verify state", email);
+                resp.end(http::BAD_REQUEST);
+                return;
+            }
+
+            json::Object params(json::Obj,
+                                "name",     user.FirstName.peek(),
+                                "endpoint", Gateway::get().Url.peek(),
+                                "token",    utils::urlencode(user.Notes),
+                                "email",    utils::urlencode(user.Email));
+            auto sent = Gateway::get().sendTemplatedEmail(user.Email, "Account successfully Registered",
+                                                          "_verify_account.html", params);
+            if (!sent) {
+                // Failed to send email message
+                ierror("Attempt to send email to user while mailbox is null");
+                Base::fail(resp, "UserRegisterFailure",
+                           "Sending registration email failed, try again later or contact system admin");
+                resp.end(http::Status::INTERNAL_ERROR);
+                return;
+            }
+
+#ifndef SWEPT
+            resp << "Verification resent for account '" << email << "', check email";
+#else
+            resp << user.Notes;
+#endif
+            resp.setContentType("text/plain");
+            resp.end();
+        }
+        catch (...) {
+            /* unhandled error */
+            ierror("/users/resendverify %s", Exception::fromCurrent().what());
+            Base::fail(resp, "InternalError", "Processing resendverify request failed, contact system administrator");
             resp.end(http::Status::INTERNAL_ERROR);
         }
     }

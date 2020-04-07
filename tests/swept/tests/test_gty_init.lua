@@ -72,6 +72,14 @@ GatewayInit("InitializingWithInvalidArguments", "Test initializing application w
         }
     })
     V(resp):IsStatus(Http.BadRequest, "Gateway should return bad request when no upload data is provided")
+
+    local resp = Http(ctx.gty('/app-init'), {
+        method = 'POST',
+        body = {
+            Fontend = "https://localhost"
+        }
+    })
+    V(resp):IsStatus(Http.BadRequest, "Gateway should return bad request when no upload data is provided")
 end)
 
 GatewayInit("InitializingWithValidArguments", "Test initializing an application with valid arguments")
@@ -80,7 +88,8 @@ GatewayInit("InitializingWithValidArguments", "Test initializing an application 
     local resp = Http(ctx.gty('/app-init'), {
         method = 'POST',
         body = {
-            Administrator = Gateway.Data.Admin
+            Administrator = Gateway.Data.Admin,
+            Frontend = Swept.Data.GtyServer
         }
     })
     V(resp):IsStatus(Http.Ok, "Initializing gateway with valid parameters should succeed")
@@ -89,7 +98,8 @@ GatewayInit("InitializingWithValidArguments", "Test initializing an application 
     resp  = Http(ctx.gty("/app-init"), {
         method = 'POST',
         body = {
-            Administrator = Gateway.Data.Admin
+            Administrator = Gateway.Data.Admin,
+            Frontend = Swept.Data.GtyServer
         }
     })
     V(resp):IsStatus(Http.NotFound, "Initializing an already initialized gateway should fail as the route get disabled");
@@ -105,7 +115,8 @@ GatewayInit("AccessingRoutesAfterInitialization", "Verifies that routes are acce
     local resp = Http(ctx.gty('/app-init'), {
         method = 'POST',
         body = {
-            Administrator = Gateway.Data.Admin
+            Administrator = Gateway.Data.Admin,
+            Frontend = Swept.Data.GtyServer
         }
     })
     V(resp):IsStatus(Http.Ok, "Initializing gateway with valid parameters should succeed")

@@ -103,7 +103,7 @@ end
 Gateway:_endpointApi('init', function(this, ctx)
     local resp = Http(ctx.gty('/app-init'), {
         method = 'POST',
-        body = { Administrator = this.Data.Admin }
+        body = { Administrator = this.Data.Admin, Frontend = Swept.Data.GtyServer}
     })
     return resp.status == Http.Ok
 end)

@@ -24,9 +24,11 @@ app = {
     --
     accounts = {
         -- key used to generate user salt
-        passwdkey = "8xF1nfomq1u5LzVB",
+        passwordKey = "8xF1nfomq1u5LzVB",
         -- The maximum number of passwords
-        passwdHistoryLimit = 5
+        passwordHistoryLimit = 5,
+        -- The passord expires in 3 month
+        -- passwordExpires = months(3)
     },
 
     --

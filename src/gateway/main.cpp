@@ -13,7 +13,7 @@ static  void cmdStart(cmdl::Parser& parser) {
                        'C', false};
     start << cmdl::Arg{"reset", "True if to reset databases, useful in testing environments",
                        'r', true, false};
-    start(&nozama::Gateway::start);
+    start(&semauusu::Gateway::start);
     parser.add(std::move(start));
 }
 

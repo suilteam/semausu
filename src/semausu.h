@@ -5,7 +5,7 @@
 #ifndef SUIL_NOZAMA_H
 #define SUIL_NOZAMA_H
 
-namespace suil::nozama {
+namespace suil::semauusu {
 
 }
 

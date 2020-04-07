@@ -7,7 +7,7 @@
 #include "users.h"
 #include "gateway.h"
 
-namespace suil::nozama {
+namespace suil::semauusu {
 
     Gateway::UPtr sGateway{nullptr};
 
@@ -81,7 +81,7 @@ namespace suil::nozama {
         }
         else {
             Ego.AdminEmail = ((String) settings["admin_email"]).dup();
-            // Ego.Frontend = ((String) settings["frontend"]).dup();
+            Ego.Frontend = ((String) settings["frontend"]).dup();
         }
     }
 
@@ -306,7 +306,7 @@ namespace suil::nozama {
             auto settings = Settings(conn);
             settings.set("initialized", true);
             settings.set("admin_email", initRequest.Administrator.Email);
-
+            settings.set("frontend", initRequest.Frontend);
             resp.clear();
             resp << "Application successfully initialized"
                  << "\nDisregard the email to verify account";

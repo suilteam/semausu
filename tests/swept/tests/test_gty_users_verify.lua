@@ -69,4 +69,29 @@ GtyUsersVerify('VerifyUsersTest', "Tests different scenarios of verifying regist
 end)
 :attrs({reset = true}) -- reset server only on first test
 
+GtyUsersVerify("ResendVerificationEmail", "Tests resend verification email route")
+:run(function(ctx)
+    -- register user and access for a verification
+    local resp = Http(ctx.gty('/users/register'), {
+        method = 'POST',
+        form = Gateway.Data.Users2[1]
+    })
+    V(resp):IsStatus(Http.Created, "User must be registered successfully")
+    local token = resp.body
+
+    -- request verification email
+    resp = Http(ctx.gty('/users/resendverify'), {
+        params = { email = Gateway.Data.Users2[1].Email }
+    })
+    V(resp):IsStatus(Http.Ok, "Verification email must have been resent successfully")
+    Equal(token, resp.body, "Token sent in the verification email must be the same as the original token")
+
+    -- request verification email on verified account
+    Test(Gateway:register(ctx, Gateway.Data.Users2[2]))
+    resp = Http(ctx.gty('/users/resendverify'), {
+        params = { email = Gateway.Data.Users2[2].Email }
+    })
+    V(resp):IsStatus(Http.BadRequest, "Request must be rejected, user already verified")
+end)
+
 return GtyUsersVerify
